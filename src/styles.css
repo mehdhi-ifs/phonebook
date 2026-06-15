@@ -1,0 +1,237 @@
+/* Material Design 3 design tokens (light scheme) */
+:root {
+  /* Color */
+  --md-sys-color-primary: #6750a4;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #eaddff;
+  --md-sys-color-on-primary-container: #21005d;
+  --md-sys-color-surface: #fef7ff;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-high: #ece6f0;
+  --md-sys-color-on-surface: #1d1b20;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-outline: #79747e;
+  --md-sys-color-outline-variant: #cac4d0;
+
+  /* Shape */
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* Spacing scale (4dp grid) */
+  --md-spacing-1: 4px;
+  --md-spacing-2: 8px;
+  --md-spacing-3: 12px;
+  --md-spacing-4: 16px;
+  --md-spacing-5: 24px;
+  --md-spacing-6: 32px;
+
+  /* Elevation */
+  --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+
+  /* Typography */
+  --md-sys-typescale-headline: 400 28px/36px "Roboto", "Segoe UI", system-ui, sans-serif;
+  --md-sys-typescale-title: 500 16px/24px "Roboto", "Segoe UI", system-ui, sans-serif;
+  --md-sys-typescale-body: 400 16px/24px "Roboto", "Segoe UI", system-ui, sans-serif;
+  --md-sys-typescale-label: 500 14px/20px "Roboto", "Segoe UI", system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font: var(--md-sys-typescale-body);
+  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-surface);
+}
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--md-spacing-4);
+}
+
+.app__header {
+  padding: var(--md-spacing-5) 0;
+}
+
+.app__title {
+  font: var(--md-sys-typescale-headline);
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+.app__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-4);
+}
+
+/* Surface card */
+.card {
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: var(--md-spacing-5);
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-4);
+}
+
+.form__title {
+  font: var(--md-sys-typescale-title);
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Text field (Material 3 outlined style) */
+.text-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-1);
+}
+
+.text-field__label {
+  font: var(--md-sys-typescale-label);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.text-field__optional {
+  color: var(--md-sys-color-outline);
+  font-weight: 400;
+}
+
+.text-field__input {
+  font: var(--md-sys-typescale-body);
+  color: var(--md-sys-color-on-surface);
+  padding: var(--md-spacing-3) var(--md-spacing-4);
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.text-field__input::placeholder {
+  color: var(--md-sys-color-outline);
+}
+
+.text-field__input:hover {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+.text-field__input:focus {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+}
+
+/* Button (Material 3 filled) */
+.button {
+  font: var(--md-sys-typescale-label);
+  border: none;
+  border-radius: var(--md-sys-shape-corner-full);
+  padding: var(--md-spacing-3) var(--md-spacing-5);
+  min-height: 40px;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.button--filled {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.button--filled:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-1);
+  background-color: #5d4596;
+}
+
+.button--filled:active:not(:disabled) {
+  background-color: #533f86;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary-container);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  background-color: rgba(29, 27, 32, 0.12);
+  color: rgba(29, 27, 32, 0.38);
+  cursor: not-allowed;
+}
+
+/* Contact list */
+.contact-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  margin: 0;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+  padding: var(--md-spacing-5) 0;
+}
+
+/* Contact card (list item) */
+.contact-card {
+  display: flex;
+  align-items: center;
+  gap: var(--md-spacing-4);
+  padding: var(--md-spacing-3) 0;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.contact-card:last-child {
+  border-bottom: none;
+}
+
+.contact-card__avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--md-sys-typescale-title);
+}
+
+.contact-card__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-card__name {
+  font: var(--md-sys-typescale-body);
+  color: var(--md-sys-color-on-surface);
+}
+
+.contact-card__phone {
+  font: var(--md-sys-typescale-label);
+  font-weight: 400;
+  color: var(--md-sys-color-on-surface-variant);
+}
