@@ -1,0 +1,179 @@
+/* Material Design 3 inspired tokens */
+:root {
+  --md-sys-color-primary: #6750a4;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #eaddff;
+  --md-sys-color-surface: #fef7ff;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-on-surface: #1d1b20;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-outline: #79747e;
+  --md-sys-color-outline-variant: #cac4d0;
+  --md-sys-color-background: #f5eff7;
+
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+
+  --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 3px 1px rgba(0, 0, 0, 0.15);
+
+  --md-spacing-1: 4px;
+  --md-spacing-2: 8px;
+  --md-spacing-3: 12px;
+  --md-spacing-4: 16px;
+  --md-spacing-6: 24px;
+
+  color-scheme: light;
+  font-family: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--md-sys-color-on-surface);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--md-sys-color-background);
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--md-spacing-6) var(--md-spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-6);
+}
+
+.app__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.surface {
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-large);
+  box-shadow: var(--md-sys-elevation-1);
+  padding: var(--md-spacing-6);
+}
+
+/* Add contact form */
+.add-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-1);
+}
+
+.field__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: 0.4px;
+}
+
+.field__input {
+  min-height: 48px;
+  padding: 0 var(--md-spacing-4);
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.field__input:hover {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+.field__input:focus-visible {
+  outline: none;
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 2px var(--md-sys-color-primary);
+}
+
+/* Buttons */
+.button {
+  align-self: flex-end;
+  min-height: 40px;
+  min-width: 96px;
+  padding: 0 var(--md-spacing-6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  color: var(--md-sys-color-on-primary);
+  background: var(--md-sys-color-primary);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, background 120ms ease, opacity 120ms ease;
+}
+
+.button:hover:not(:disabled) {
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--md-sys-color-surface),
+    0 0 0 4px var(--md-sys-color-primary);
+}
+
+.button:active:not(:disabled) {
+  background: #56438f;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+/* Contact list */
+.contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--md-spacing-4);
+  padding: var(--md-spacing-4) 0;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.contact-card:last-child {
+  border-bottom: none;
+}
+
+.contact-card__name {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.contact-card__phone {
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Empty state */
+.empty-state {
+  margin: 0;
+  padding: var(--md-spacing-6) 0;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
