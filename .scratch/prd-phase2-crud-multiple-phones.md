@@ -64,34 +64,44 @@ still lives in memory for the session — no search, no persistence, no backend.
   prop). It now exposes three handlers downward — add, update (replace a contact
   by `id`), and delete (remove a contact by `id`). No global state, no context,
   no reducer; updates are immutable `setContacts` transforms keyed by `id`.
-- **Shared form — `ContactForm`**: Replace the Phase 1 `AddContactForm` with a
-  single `ContactForm` used for **both** add and edit. It is the natural shape
-  because add and edit operate on identical fields (name + a dynamic list of
-  phone rows); maintaining two near-identical forms would be the bigger
-  over-abstraction. The form takes an optional initial contact (absent = add
-  mode, present = edit mode) and a submit callback, and renders a Save/Add
-  action plus, in edit mode, a Cancel action. The form owns its own working copy
-  of the field values in local `useState` and does not mutate the contact until
-  the user saves.
-- **Dynamic phone rows**: Inside `ContactForm`, the set of phone-number rows is
-  local component state — an array of `{ id, label, number }` working entries.
-  An "Add phone number" control appends a new empty row (with a generated `id`
-  and `label` defaulting to `DEFAULT_CONTACT_LABEL`). Each row has a Remove
-  control. Each row has a **value input** and a **label input/control**, both
-  with visible associated labels (Material text-field pattern). Rows are keyed by
-  their working `id`.
+- **Two separate forms — `AddContactForm` and `EditContactForm`**: Keep
+  `AddContactForm` (evolved from Phase 1) and introduce a distinct
+  `EditContactForm`. Although both operate on the same fields, their lifecycles
+  differ enough to keep apart: add starts empty, clears on submit, lives always
+  at the top of the screen, and appends a new contact; edit starts pre-filled,
+  has a Cancel, appears inline on a card, and replaces a contact by `id`. Each
+  form owns its own working copy of the field values in local `useState` and does
+  not mutate the contact until the user saves.
+- **Shared `PhoneNumberFields` sub-component**: The genuinely identical, fiddly
+  part — the dynamic set of phone rows — is extracted into a presentational
+  `PhoneNumberFields` component that **both** forms render. It receives the rows
+  plus change/add/remove callbacks and renders each row's **value input** and
+  **label `<select>`** (Material patterns, visible associated labels), an
+  "Add phone number" control, and a per-row Remove control. Each form still owns
+  its own `useState` for the name and the rows array; `PhoneNumberFields` owns no
+  rows state itself (no custom hooks). Rows are keyed by their working `id`.
+- **Phone-row working entries**: A row is `{ id, label, number }` (plus a primary
+  flag surfaced only in edit — see below). New rows get a generated `id` and a
+  `label` defaulting to `DEFAULT_CONTACT_LABEL`. The label control is a `<select>`
+  over the five known labels (`home`/`work`/`mobile`/`main`/`other`); the
+  `(string & {})` custom-label escape hatch in the type is intentionally not
+  exposed in Phase 2.
 - **"At least one phone number" guard (chosen rule)**: The form always keeps at
-  least one phone row. The per-row Remove control is **disabled/hidden when only
-  one row remains**, so the last number can't be removed via the form. This is
-  the chosen, consistent interpretation of the requirement's "pick one"
-  (we do *not* take the "delete the whole contact" branch). Deleting the entire
-  contact is a separate action on the card.
-- **Primary number rule**: Exactly one phone is marked `isPrimary`. On save the
-  form normalizes the saved `phones[]` so the **first** retained phone is
-  `isPrimary: true` and the rest are not. There is **no dedicated "make primary"
-  picker** in the UI — that would be scope creep beyond the requirements; primary
-  is derived from position. The contact card shows the primary (first) number
-  prominently and lists the remaining numbers.
+  least one phone row. The per-row Remove control is **disabled (not hidden) when
+  only one row remains**, with an explanatory `aria-label`, so the last number
+  can't be removed via the form while keeping the layout stable. This is the
+  chosen, consistent interpretation of the requirement's "pick one" (we do *not*
+  take the "delete the whole contact" branch). Deleting the entire contact is a
+  separate action on the card.
+- **Primary number rule**: Exactly one phone is marked `isPrimary`. In the **add**
+  form there is no picker — the **first** row is normalized to `isPrimary` on
+  save. In the **edit** form the user **can choose** which number is primary via a
+  per-row primary control (a radio/star set, exactly one selected at a time);
+  `PhoneNumberFields` exposes this through a `showPrimaryControl` prop that is on
+  for edit and off for add. On save, the chosen row is `isPrimary: true` and the
+  rest are not; if the chosen primary row is removed, primary **falls back to the
+  first remaining row**. The contact card shows the primary number first with a
+  marker and lists the remaining numbers.
 - **Validation / save gating**: Trim the name and every phone value before
   validating and before saving. A save is allowed only when the name is
   non-empty after trimming **and** at least one phone row has a non-empty value
@@ -102,10 +112,15 @@ still lives in memory for the session — no search, no persistence, no backend.
 - **Editing UX — inline on the card**: Each `ContactCard` owns a local
   `isEditing` boolean (`useState`). In display mode it shows the name, the
   phone numbers (primary first), an **Edit** action, and a **Delete** action. In
-  editing mode it renders `ContactForm` seeded with that contact; Save calls
+  editing mode it renders `EditContactForm` seeded with that contact; Save calls
   `App`'s update handler and returns to display mode, Cancel returns to display
-  mode unchanged. Keeping edit state local to each card avoids threading an
-  `editingId` through `App` and keeps the "useState only / state local" rule.
+  mode unchanged. Multiple cards may be in editing mode at once — that's
+  acceptable and simpler than enforcing a single open editor. Keeping edit state
+  local to each card avoids threading an `editingId` through `App` and keeps the
+  "useState only / state local" rule. The edit form is **conditionally rendered**
+  (mounted on open, unmounted on Save/Cancel): it seeds its working copy from the
+  `contact` prop via `useState` initializers and discards edits purely by
+  unmounting — no persistent form, no `useEffect` re-sync.
 - **`ContactCard` display update**: The card now renders **all** of a contact's
   phone numbers (each with its label), with the primary number first, instead of
   only the single primary number. Name display rules from Phase 1 are unchanged
@@ -121,10 +136,16 @@ still lives in memory for the session — no search, no persistence, no backend.
 - **ID generation**: New phone rows and new contacts get `id`s from
   `crypto.randomUUID()` at creation time, consistent with Phase 1. Existing phone
   `id`s are preserved across edits so list keys stay stable.
-- **New-contact construction in add mode**: Built the same way as Phase 1 (new
-  contact `id`, `name.first` from the name input, `emails`/`addresses` as `[]`)
-  but with `phones[]` containing every non-empty row the user entered, normalized
-  so the first is `isPrimary`.
+- **New-contact construction (`AddContactForm`)**: Built the same way as Phase 1
+  (new contact `id`, `name.first` from the name input, `emails`/`addresses` as
+  `[]`) but with `phones[]` containing every non-empty row the user entered,
+  normalized so the first is `isPrimary`.
+- **Edit save is a merge, not a rebuild (`EditContactForm` → `App.updateContact`)**:
+  On save, keep the original contact's `id`, `emails`, and `addresses` untouched
+  and overwrite only `name` and `phones`. Preserve each existing phone's `id`
+  when its row is edited (stable list keys); generate new `id`s only for rows
+  added during editing. This protects the (UI-less but real) `emails`/`addresses`
+  from being silently wiped.
 - **Styling**: Continue the Phase 1 approach — custom CSS in the single global
   stylesheet using Material Design 3 tokens (CSS custom properties), with M3 cues
   for the new affordances (add/remove-row buttons, Edit/Delete/Save/Cancel
@@ -139,13 +160,14 @@ still lives in memory for the session — no search, no persistence, no backend.
 - **What makes a good test here**: Tests assert *external, user-visible behavior*
   through the rendered UI — what the user types, clicks, and sees — never
   component internals, prop wiring, or state-variable names. A test should
-  survive any refactor that preserves behavior (e.g. renaming `AddContactForm` to
-  `ContactForm`, or moving edit state between `App` and `ContactCard`).
+  survive any refactor that preserves behavior (e.g. moving edit state between
+  `App` and `ContactCard`, or reshaping the shared `PhoneNumberFields`).
 - **Seam (reused, highest available)**: Test at the `<App />` seam — render
   `<App />` and drive everything through the DOM, seeding existing contacts via
-  the existing `initialContacts` prop. Do **not** test `ContactForm`,
-  `ContactList`, or `ContactCard` in isolation; their behavior is covered
-  transitively through `<App />`. No new seam is introduced for Phase 2.
+  the existing `initialContacts` prop. Do **not** test `AddContactForm`,
+  `EditContactForm`, `PhoneNumberFields`, `ContactList`, or `ContactCard` in
+  isolation; their behavior is covered transitively through `<App />`. No new
+  seam is introduced for Phase 2.
 - **Tooling**: Vitest + React Testing Library (`@testing-library/react` +
   `@testing-library/user-event`), matching the existing `src/App.test.tsx` and
   `src/test/setup.ts`.
@@ -167,6 +189,10 @@ still lives in memory for the session — no search, no persistence, no backend.
     one.
   - Cancel edit: making changes then cancelling leaves the contact unchanged and
     returns to display mode.
+  - Choose primary while editing: selecting a different number as primary and
+    saving shows that number as the contact's primary on the card.
+  - Primary fallback: removing the row currently marked primary and saving leaves
+    the first remaining number as primary.
   - Delete contact: clicking Delete removes that contact from the list
     immediately while leaving other contacts intact; deleting the only contact
     returns the empty-state message.
@@ -193,7 +219,10 @@ still lives in memory for the session — no search, no persistence, no backend.
   the session.
 - Backend / API integration.
 - Email and address UI (the model supports them; still no inputs).
-- A dedicated "make primary" picker (primary is derived from position).
+- Custom (free-text) phone labels — the label control is a fixed `<select>` over
+  the five known labels, even though the type allows arbitrary strings.
+- Reordering phone rows, and a "make primary" picker in the **add** form (primary
+  selection exists only in the edit form; add defaults the first row to primary).
 - Advanced or format-specific phone/name validation (only the empty guard).
 - Anything from Phase 3.
 
@@ -202,10 +231,15 @@ still lives in memory for the session — no search, no persistence, no backend.
 - **Phase order is strict**: Phase 2 only, and only after Phase 1 meets its
   Acceptance Criteria and Definition of Done. Do not pull work forward from
   Phase 3; anything under Out of Scope is forbidden even if convenient.
-- **`AddContactForm` is being subsumed**: Phase 2 evolves the Phase 1
-  `AddContactForm` into a shared `ContactForm`. This is an internal refactor of an
-  existing component, not new surface area — the Phase 1 add behavior and its
-  tests must keep passing.
+- **Component shape**: Phase 1's `AddContactForm` is kept (evolved to manage
+  multiple phone rows); a new `EditContactForm` is added; both render a shared
+  `PhoneNumberFields` sub-component. The Phase 1 add behavior and its tests must
+  keep passing throughout.
+- **Decisions refined via `/grill-me`**: This PRD was sharpened in a grilling
+  session — notably (a) two separate forms over one shared form, (b) a real
+  primary-number picker in the edit flow (not pure position-derivation), (c) a
+  shared `PhoneNumberFields` with a `showPrimaryControl` prop, (d) edit-as-merge,
+  and (e) seed-from-props + discard-on-unmount for the edit working copy.
 - **Definition of Done** (from requirements): all CRUD operations work
   end-to-end; multiple phone numbers per contact can be added and removed; the UI
   reflects changes immediately; clean, readable component structure; no unused
