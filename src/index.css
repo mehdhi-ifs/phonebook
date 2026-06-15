@@ -3,8 +3,16 @@
   --md-sys-color-primary: #6750a4;
   --md-sys-color-on-primary: #ffffff;
   --md-sys-color-primary-container: #eaddff;
+  --md-sys-color-on-primary-container: #21005d;
+  --md-sys-color-secondary-container: #e8def8;
+  --md-sys-color-on-secondary-container: #1d192b;
+  --md-sys-color-error: #b3261e;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #f9dedc;
+  --md-sys-color-on-error-container: #410e0b;
   --md-sys-color-surface: #fef7ff;
   --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-high: #ece6f0;
   --md-sys-color-on-surface: #1d1b20;
   --md-sys-color-on-surface-variant: #49454f;
   --md-sys-color-outline: #79747e;
@@ -17,6 +25,8 @@
 
   --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3),
     0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-2: 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px 2px rgba(0, 0, 0, 0.15);
 
   --md-spacing-1: 4px;
   --md-spacing-2: 8px;
@@ -39,7 +49,7 @@ body {
 }
 
 .app {
-  max-width: 480px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: var(--md-spacing-6) var(--md-spacing-4);
   display: flex;
@@ -54,6 +64,31 @@ body {
   letter-spacing: 0;
 }
 
+/* Two-pane responsive layout */
+.app__layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: var(--md-spacing-6);
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .app__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.app__pane--add {
+  position: sticky;
+  top: var(--md-spacing-6);
+}
+
+@media (max-width: 768px) {
+  .app__pane--add {
+    position: static;
+  }
+}
+
 .surface {
   background: var(--md-sys-color-surface);
   border-radius: var(--md-sys-shape-corner-large);
@@ -61,8 +96,16 @@ body {
   padding: var(--md-spacing-6);
 }
 
-/* Add contact form */
-.add-contact-form {
+.pane__title {
+  margin: 0 0 var(--md-spacing-4);
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Forms */
+.add-contact-form,
+.edit-contact-form {
   display: flex;
   flex-direction: column;
   gap: var(--md-spacing-4);
@@ -82,9 +125,11 @@ body {
 }
 
 .field__input {
+  width: 100%;
   min-height: 48px;
   padding: 0 var(--md-spacing-4);
   font-size: 1rem;
+  font-family: inherit;
   color: var(--md-sys-color-on-surface);
   background: var(--md-sys-color-surface-container);
   border: 1px solid var(--md-sys-color-outline);
@@ -102,14 +147,21 @@ body {
   box-shadow: 0 0 0 2px var(--md-sys-color-primary);
 }
 
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--md-spacing-2);
+}
+
 /* Buttons */
 .button {
-  align-self: flex-end;
+  align-self: center;
   min-height: 40px;
   min-width: 96px;
   padding: 0 var(--md-spacing-6);
   font-size: 0.875rem;
   font-weight: 500;
+  font-family: inherit;
   letter-spacing: 0.1px;
   color: var(--md-sys-color-on-primary);
   background: var(--md-sys-color-primary);
@@ -138,6 +190,85 @@ body {
   opacity: 0.38;
 }
 
+.button--secondary {
+  color: var(--md-sys-color-on-secondary-container);
+  background: var(--md-sys-color-secondary-container);
+}
+
+.button--secondary:active:not(:disabled) {
+  background: #d8c9ef;
+}
+
+.button--secondary:focus-visible {
+  box-shadow: 0 0 0 2px var(--md-sys-color-surface),
+    0 0 0 4px var(--md-sys-color-primary);
+}
+
+.button--danger {
+  color: var(--md-sys-color-on-error);
+  background: var(--md-sys-color-error);
+}
+
+.button--danger:active:not(:disabled) {
+  background: #8c1d18;
+}
+
+.button--danger:focus-visible {
+  box-shadow: 0 0 0 2px var(--md-sys-color-surface),
+    0 0 0 4px var(--md-sys-color-error);
+}
+
+/* Phone number rows (add + edit forms) */
+.phone-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-3);
+}
+
+.phone-fields__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--md-spacing-2);
+  padding: var(--md-spacing-3);
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+
+.phone-fields__row .field {
+  flex: 1 1 130px;
+}
+
+.phone-fields__row .field__input {
+  background: var(--md-sys-color-surface);
+}
+
+.phone-fields__primary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--md-spacing-1);
+  padding-bottom: var(--md-spacing-2);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+
+.phone-fields__primary input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+
+.phone-fields .button {
+  min-width: auto;
+  padding: 0 var(--md-spacing-4);
+}
+
 /* Contact list */
 .contact-list {
   list-style: none;
@@ -145,29 +276,87 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--md-spacing-2);
 }
 
 .contact-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--md-spacing-4);
-  padding: var(--md-spacing-4) 0;
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.contact-card:last-child {
-  border-bottom: none;
+  flex-direction: column;
+  gap: var(--md-spacing-3);
+  padding: var(--md-spacing-4);
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
 }
 
 .contact-card__name {
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 500;
 }
 
+.contact-card__phones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-spacing-2);
+}
+
 .contact-card__phone {
-  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--md-spacing-2);
+}
+
+.contact-card__phone-label {
+  min-width: 56px;
+  padding: 2px var(--md-spacing-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-align: center;
+  text-transform: capitalize;
+  letter-spacing: 0.4px;
   color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-high);
+  border-radius: var(--md-sys-shape-corner-small);
+}
+
+.contact-card__phone-number {
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-card__primary-badge {
+  padding: 2px var(--md-spacing-2);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--md-sys-color-on-primary-container);
+  background: var(--md-sys-color-primary-container);
+  border-radius: 999px;
+}
+
+.contact-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--md-spacing-2);
+  margin-top: var(--md-spacing-1);
+}
+
+.contact-card__actions .button {
+  min-width: auto;
+  min-height: 36px;
+  padding: 0 var(--md-spacing-4);
+}
+
+.contact-card__confirm-prompt {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-error-container);
 }
 
 /* Empty state */
