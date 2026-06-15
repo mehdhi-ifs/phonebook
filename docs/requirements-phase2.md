@@ -74,6 +74,24 @@ numbers — still no search, persistence, or backend.
 - Ensure accessibility: sufficient color contrast, visible focus indicators, and adequate touch target sizes.
 - Because external UI libraries are not allowed (see Constraints), implement these guidelines with custom CSS/styling rather than a Material component library.
 
+### Layout
+
+- Use a **two-pane layout** below the app title:
+  - **Add contact** on one side and the **Contacts** list on the other (the
+    "Add" pane is the narrower, fixed-ish column; the list pane takes the
+    remaining space).
+  - Each pane is a Material **surface** (rounded corners, elevation) with its own
+    section heading (e.g. "Add contact", "Contacts").
+  - On wide viewports the "Add" pane may **stick** in place while the contacts
+    list scrolls.
+- The layout must be **responsive**:
+  - At a small-screen breakpoint (≈768px and below) the two panes **collapse to a
+    single column** and the "Add" pane stops sticking.
+  - Phone-number rows, contact cards, and action buttons should **wrap
+    gracefully** rather than overflow on narrow screens.
+- Contact cards display the contact's name, all phone numbers (primary first,
+  each with a label chip and a primary marker), and the Edit/Delete actions.
+
 ---
 
 ## 📦 Data Model
