@@ -5,7 +5,9 @@ import { PhoneNumberFields, type PhoneRow } from "./PhoneNumberFields";
 
 type EditContactFormProps = {
   contact: Contact;
-  onSave: (id: string, name: string, phones: PhoneRow[]) => void;
+  saving?: boolean;
+  error?: string | null;
+  onSave: (id: string, name: string, phones: PhoneRow[]) => void | Promise<void>;
   onCancel: () => void;
 };
 
@@ -20,6 +22,8 @@ function toRows(contact: Contact): PhoneRow[] {
 
 export function EditContactForm({
   contact,
+  saving = false,
+  error = null,
   onSave,
   onCancel,
 }: EditContactFormProps) {
@@ -62,7 +66,7 @@ export function EditContactForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!canSave) return;
+    if (!canSave || saving) return;
     const phones = rows
       .map((row) => ({ ...row, number: row.number.trim() }))
       .filter((row) => row.number !== "");
@@ -93,16 +97,22 @@ export function EditContactForm({
         onSelectPrimary={selectPrimary}
         primaryGroupName={`primary-${contact.id}`}
       />
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="form-actions">
         <button
           className="button button--secondary"
           type="button"
           onClick={onCancel}
+          disabled={saving}
         >
           Cancel
         </button>
-        <button className="button" type="submit" disabled={!canSave}>
-          Save
+        <button className="button" type="submit" disabled={!canSave || saving}>
+          {saving ? "Saving…" : "Save"}
         </button>
       </div>
     </form>

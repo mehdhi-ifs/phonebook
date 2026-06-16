@@ -2,16 +2,23 @@ import type { Contact } from "../types";
 import { ContactCard } from "./ContactCard";
 import type { PhoneRow } from "./PhoneNumberFields";
 
+type CardAction = { id: string; type: "saving" | "deleting" };
+type CardError = { id: string; message: string };
+
 type ContactListProps = {
   contacts: Contact[];
   duplicateNumbers: Set<string>;
-  onDelete: (id: string) => void;
-  onUpdate: (id: string, name: string, phones: PhoneRow[]) => void;
+  cardAction: CardAction | null;
+  cardError: CardError | null;
+  onDelete: (id: string) => Promise<boolean>;
+  onUpdate: (id: string, name: string, phones: PhoneRow[]) => Promise<boolean>;
 };
 
 export function ContactList({
   contacts,
   duplicateNumbers,
+  cardAction,
+  cardError,
   onDelete,
   onUpdate,
 }: ContactListProps) {
@@ -26,6 +33,8 @@ export function ContactList({
           key={contact.id}
           contact={contact}
           duplicateNumbers={duplicateNumbers}
+          action={cardAction?.id === contact.id ? cardAction.type : null}
+          error={cardError?.id === contact.id ? cardError.message : null}
           onDelete={onDelete}
           onUpdate={onUpdate}
         />

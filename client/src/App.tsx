@@ -32,12 +32,20 @@ function findDuplicateNumbers(contacts: Contact[]): Set<string> {
   );
 }
 
+type CardAction = { id: string; type: "saving" | "deleting" };
+type CardError = { id: string; message: string };
+
 export function App({ client = defaultClient }: AppProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [cardAction, setCardAction] = useState<CardAction | null>(null);
+  const [cardError, setCardError] = useState<CardError | null>(null);
 
   const duplicateNumbers = useMemo(
     () => findDuplicateNumbers(allContacts),
@@ -62,19 +70,22 @@ export function App({ client = defaultClient }: AppProps) {
   useEffect(() => {
     let active = true;
     const delay = query.trim() === "" ? 0 : SEARCH_DEBOUNCE_MS;
+    if (active) setSearching(true);
     const handle = setTimeout(() => {
       client
         .list(query)
         .then((list) => {
           if (!active) return;
           setContacts(list);
-          setError(null);
+          setSearchError(null);
         })
         .catch((err) => {
-          if (active) setError(errorMessage(err));
+          if (active) setSearchError(errorMessage(err));
         })
         .finally(() => {
-          if (active) setLoading(false);
+          if (!active) return;
+          setLoading(false);
+          setSearching(false);
         });
     }, delay);
     return () => {
@@ -92,7 +103,16 @@ export function App({ client = defaultClient }: AppProps) {
     setAllContacts(all);
   }
 
-  async function addContact(name: string, phones: PhoneRow[]) {
+  function clearCardError(id: string) {
+    setCardError((current) => (current?.id === id ? null : current));
+  }
+
+  async function addContact(
+    name: string,
+    phones: PhoneRow[],
+  ): Promise<boolean> {
+    setSaving(true);
+    setAddError(null);
     try {
       await client.create({
         name: { first: name },
@@ -101,14 +121,23 @@ export function App({ client = defaultClient }: AppProps) {
           number: phone.number,
         })),
       });
-      setError(null);
       await refresh();
+      return true;
     } catch (err) {
-      setError(errorMessage(err));
+      setAddError(errorMessage(err));
+      return false;
+    } finally {
+      setSaving(false);
     }
   }
 
-  async function updateContact(id: string, name: string, phones: PhoneRow[]) {
+  async function updateContact(
+    id: string,
+    name: string,
+    phones: PhoneRow[],
+  ): Promise<boolean> {
+    setCardAction({ id, type: "saving" });
+    clearCardError(id);
     try {
       await client.update(id, {
         name: { first: name },
@@ -119,35 +148,38 @@ export function App({ client = defaultClient }: AppProps) {
           isPrimary: phone.isPrimary,
         })),
       });
-      setError(null);
       await refresh();
+      return true;
     } catch (err) {
-      setError(errorMessage(err));
+      setCardError({ id, message: errorMessage(err) });
+      return false;
+    } finally {
+      setCardAction(null);
     }
   }
 
-  async function deleteContact(id: string) {
+  async function deleteContact(id: string): Promise<boolean> {
+    setCardAction({ id, type: "deleting" });
+    clearCardError(id);
     try {
       await client.remove(id);
-      setError(null);
       await refresh();
+      return true;
     } catch (err) {
-      setError(errorMessage(err));
+      setCardError({ id, message: errorMessage(err) });
+      return false;
+    } finally {
+      setCardAction(null);
     }
   }
 
   return (
     <main className="app">
       <h1 className="app__title">Phone Book</h1>
-      {error && (
-        <p className="error-banner" role="alert">
-          {error}
-        </p>
-      )}
       <div className="app__layout">
         <section className="surface app__pane app__pane--add">
           <h2 className="pane__title">Add contact</h2>
-          <AddContactForm onAdd={addContact} />
+          <AddContactForm onAdd={addContact} saving={saving} error={addError} />
         </section>
         <section className="surface app__pane app__pane--contacts">
           <h2 className="pane__title">Contacts</h2>
@@ -160,7 +192,17 @@ export function App({ client = defaultClient }: AppProps) {
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by name or number"
             />
+            {searching && !loading && (
+              <span className="field__hint" role="status">
+                Searching…
+              </span>
+            )}
           </label>
+          {searchError && (
+            <p className="error-banner" role="alert">
+              {searchError}
+            </p>
+          )}
           {loading ? (
             <p className="loading-state" role="status">
               Loading contacts…
@@ -171,6 +213,8 @@ export function App({ client = defaultClient }: AppProps) {
             <ContactList
               contacts={contacts}
               duplicateNumbers={duplicateNumbers}
+              cardAction={cardAction}
+              cardError={cardError}
               onDelete={deleteContact}
               onUpdate={updateContact}
             />

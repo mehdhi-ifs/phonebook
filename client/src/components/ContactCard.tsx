@@ -6,8 +6,10 @@ import type { PhoneRow } from "./PhoneNumberFields";
 type ContactCardProps = {
   contact: Contact;
   duplicateNumbers: Set<string>;
-  onDelete: (id: string) => void;
-  onUpdate: (id: string, name: string, phones: PhoneRow[]) => void;
+  action: "saving" | "deleting" | null;
+  error: string | null;
+  onDelete: (id: string) => Promise<boolean>;
+  onUpdate: (id: string, name: string, phones: PhoneRow[]) => Promise<boolean>;
 };
 
 function displayName(contact: Contact): string {
@@ -26,20 +28,27 @@ function phonesPrimaryFirst(contact: Contact): PhoneNumber[] {
 export function ContactCard({
   contact,
   duplicateNumbers,
+  action,
+  error,
   onDelete,
   onUpdate,
 }: ContactCardProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  const isSaving = action === "saving";
+  const isDeleting = action === "deleting";
+
   if (isEditing) {
     return (
       <li className="contact-card">
         <EditContactForm
           contact={contact}
-          onSave={(id, name, phones) => {
-            onUpdate(id, name, phones);
-            setIsEditing(false);
+          saving={isSaving}
+          error={error}
+          onSave={async (id, name, phones) => {
+            const ok = await onUpdate(id, name, phones);
+            if (ok) setIsEditing(false);
           }}
           onCancel={() => setIsEditing(false)}
         />
@@ -76,13 +85,18 @@ export function ContactCard({
             <button
               type="button"
               className="button button--danger"
-              onClick={() => onDelete(contact.id)}
+              disabled={isDeleting}
+              onClick={async () => {
+                const ok = await onDelete(contact.id);
+                if (!ok) setConfirmingDelete(false);
+              }}
             >
-              Confirm delete
+              {isDeleting ? "Deleting…" : "Confirm delete"}
             </button>
             <button
               type="button"
               className="button button--secondary"
+              disabled={isDeleting}
               onClick={() => setConfirmingDelete(false)}
             >
               Cancel
@@ -107,6 +121,11 @@ export function ContactCard({
           </>
         )}
       </div>
+      {error && (
+        <p className="contact-card__error" role="alert">
+          {error}
+        </p>
+      )}
     </li>
   );
 }

@@ -34,6 +34,21 @@ function renderApp(contacts: Contact[] = []) {
   return render(<App client={makeFakeContactsClient(contacts)} />);
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+async function fillAddForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText(/name/i), "Ada");
+  await user.type(screen.getByLabelText(/phone/i), "555-0100");
+}
+
 describe("Phone Book app", () => {
   it("renders the app heading", async () => {
     renderApp();
@@ -278,6 +293,105 @@ describe("Phase 3: duplicate detection", () => {
       expect(screen.queryByText("Grace")).not.toBeInTheDocument();
     });
     expect(screen.getAllByText(/^duplicate$/i)).toHaveLength(1);
+  });
+});
+
+describe("Phase 3: per-action loading & error", () => {
+  it("shows a saving state on the Add button while a create is in flight", async () => {
+    const user = userEvent.setup();
+    const base = makeFakeContactsClient([]);
+    const pending = deferred<Awaited<ReturnType<typeof base.create>>>();
+    const client = { ...base, create: () => pending.promise };
+    render(<App client={client} />);
+    await screen.findByText(/no contacts yet/i);
+
+    await fillAddForm(user);
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    const savingButton = await screen.findByRole("button", { name: /saving/i });
+    expect(savingButton).toBeDisabled();
+
+    pending.resolve({
+      id: "new",
+      name: { first: "Ada" },
+      phones: [{ id: "p", label: "mobile", number: "555-0100", isPrimary: true }],
+      emails: [],
+      addresses: [],
+    });
+
+    expect(await screen.findByRole("button", { name: "Add" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /saving/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("surfaces an action-level error near the add form when a create fails, leaving the list intact", async () => {
+    const user = userEvent.setup();
+    const base = makeFakeContactsClient([]);
+    const client = {
+      ...base,
+      create: () => Promise.reject(new Error("Save failed")),
+    };
+    render(<App client={client} />);
+    await screen.findByText(/no contacts yet/i);
+
+    await fillAddForm(user);
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    const form = screen.getByRole("form", { name: /add contact/i });
+    expect(await within(form).findByText(/save failed/i)).toBeInTheDocument();
+    expect(screen.getByText(/no contacts yet/i)).toBeInTheDocument();
+  });
+
+  it("shows a search error without wiping the current results", async () => {
+    const user = userEvent.setup();
+    const base = makeFakeContactsClient([
+      makeContact("Ada", "555-0100"),
+      makeContact("Grace", "555-0199"),
+    ]);
+    const client = {
+      ...base,
+      list: (query?: string) =>
+        query ? Promise.reject(new Error("Search failed")) : base.list(),
+    };
+    render(<App client={client} />);
+    await screen.findByText("Ada");
+
+    await user.type(screen.getByRole("searchbox"), "Ada");
+
+    expect(await screen.findByText(/search failed/i)).toBeInTheDocument();
+    expect(screen.getByText("Ada")).toBeInTheDocument();
+    expect(screen.getByText("Grace")).toBeInTheDocument();
+  });
+
+  it("shows a card-level error when a delete fails and clears it on a later success", async () => {
+    const user = userEvent.setup();
+    const base = makeFakeContactsClient([makeContact("Ada", "555-0100")]);
+    let shouldFail = true;
+    const client = {
+      ...base,
+      remove: (id: string) =>
+        shouldFail
+          ? Promise.reject(new Error("Delete failed"))
+          : base.remove(id),
+    };
+    render(<App client={client} />);
+    const card = (await screen.findByText("Ada")).closest("li") as HTMLElement;
+
+    await user.click(within(card).getByRole("button", { name: /^delete$/i }));
+    await user.click(within(card).getByRole("button", { name: /confirm delete/i }));
+
+    expect(await within(card).findByText(/delete failed/i)).toBeInTheDocument();
+    expect(screen.getByText("Ada")).toBeInTheDocument();
+
+    shouldFail = false;
+    await user.click(within(card).getByRole("button", { name: /^delete$/i }));
+    await user.click(within(card).getByRole("button", { name: /confirm delete/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Ada")).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText(/delete failed/i)).not.toBeInTheDocument();
   });
 });
 
