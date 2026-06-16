@@ -4,12 +4,14 @@ import type { PhoneRow } from "./PhoneNumberFields";
 
 type ContactListProps = {
   contacts: Contact[];
+  duplicateNumbers: Set<string>;
   onDelete: (id: string) => void;
   onUpdate: (id: string, name: string, phones: PhoneRow[]) => void;
 };
 
 export function ContactList({
   contacts,
+  duplicateNumbers,
   onDelete,
   onUpdate,
 }: ContactListProps) {
@@ -23,6 +25,7 @@ export function ContactList({
         <ContactCard
           key={contact.id}
           contact={contact}
+          duplicateNumbers={duplicateNumbers}
           onDelete={onDelete}
           onUpdate={onUpdate}
         />

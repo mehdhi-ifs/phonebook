@@ -269,6 +269,11 @@ body {
   padding: 0 var(--md-spacing-4);
 }
 
+/* Search */
+.search-field {
+  margin-bottom: var(--md-spacing-4);
+}
+
 /* Contact list */
 .contact-list {
   list-style: none;
@@ -339,6 +344,17 @@ body {
   border-radius: 999px;
 }
 
+.contact-card__duplicate-badge {
+  padding: 2px var(--md-spacing-2);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--md-sys-color-on-error-container, #410002);
+  background: var(--md-sys-color-error-container, #ffdad6);
+  border-radius: 999px;
+}
+
 .contact-card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -365,4 +381,23 @@ body {
   padding: var(--md-spacing-6) 0;
   text-align: center;
   color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Loading state */
+.loading-state {
+  margin: 0;
+  padding: var(--md-spacing-6) 0;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Error banner */
+.error-banner {
+  margin: 0;
+  padding: var(--md-spacing-3) var(--md-spacing-4);
+  color: var(--md-sys-color-on-error-container);
+  background: var(--md-sys-color-error-container);
+  border: 1px solid var(--md-sys-color-error);
+  border-radius: var(--md-sys-shape-corner-medium);
+  font-size: 0.875rem;
 }

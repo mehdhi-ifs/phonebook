@@ -1,6 +1,6 @@
 # Issue 013 — Duplicate phone detection (client-derived)
 
-**Status:** ready-for-agent
+**Status:** done
 **Type:** AFK
 **Parent:** `.scratch/prd-phase3-backend-search-duplicates.md`
 
@@ -24,13 +24,13 @@ contract once Issue 012 lands.
 
 ## Acceptance criteria
 
-- [ ] A phone number on two or more contacts is flagged on every contact where it appears.
-- [ ] A phone number on only one contact is not flagged.
-- [ ] Duplicate detection uses exact string comparison (no normalization) and is computed, not stored.
-- [ ] The flag updates after add / edit / delete without a manual refresh.
-- [ ] Duplicates are computed over the full list, so a number stays flagged even when its other contact is filtered out by an active search.
-- [ ] The badge/highlight follows Material cues with sufficient contrast and is accessible (labeled/announced).
-- [ ] Tests through `<App />` + fake client cover: a shared number flagged on both contacts, a unique number not flagged, the flag updating after a mutation, and (with search) a duplicate still flagged while its partner is filtered from view.
+- [x] A phone number on two or more contacts is flagged on every contact where it appears.
+- [x] A phone number on only one contact is not flagged.
+- [x] Duplicate detection uses exact string comparison (no normalization) and is computed, not stored.
+- [x] The flag updates after add / edit / delete without a manual refresh.
+- [x] Duplicates are computed over the full list, so a number stays flagged even when its other contact is filtered out by an active search.
+- [x] The badge/highlight follows Material cues with sufficient contrast and is accessible (labeled/announced).
+- [x] Tests through `<App />` + fake client cover: a shared number flagged on both contacts, a unique number not flagged, the flag updating after a mutation, and (with search) a duplicate still flagged while its partner is filtered from view.
 
 ## Blocked by
 

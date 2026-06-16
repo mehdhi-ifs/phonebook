@@ -42,12 +42,29 @@ function rowToContact(db: Db, row: ContactRow): Contact {
   return { id: row.id, name, phones, emails: [], addresses: [] };
 }
 
-export function listContacts(db: Db): Contact[] {
+export function listContacts(db: Db, query?: string): Contact[] {
+  const q = query?.trim().toLowerCase();
+  if (!q) {
+    const rows = db
+      .prepare(
+        "SELECT id, name_first, name_last, name_display FROM contacts ORDER BY rowid",
+      )
+      .all() as ContactRow[];
+    return rows.map((row) => rowToContact(db, row));
+  }
+
   const rows = db
     .prepare(
-      "SELECT id, name_first, name_last, name_display FROM contacts ORDER BY rowid",
+      `SELECT DISTINCT c.id, c.name_first, c.name_last, c.name_display
+       FROM contacts c
+       LEFT JOIN phones p ON p.contact_id = c.id
+       WHERE instr(lower(c.name_first), ?) > 0
+          OR instr(lower(ifnull(c.name_last, '')), ?) > 0
+          OR instr(lower(ifnull(c.name_display, '')), ?) > 0
+          OR instr(lower(ifnull(p.number, '')), ?) > 0
+       ORDER BY c.rowid`,
     )
-    .all() as ContactRow[];
+    .all(q, q, q, q) as ContactRow[];
   return rows.map((row) => rowToContact(db, row));
 }
 

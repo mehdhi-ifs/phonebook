@@ -5,6 +5,7 @@ import type { PhoneRow } from "./PhoneNumberFields";
 
 type ContactCardProps = {
   contact: Contact;
+  duplicateNumbers: Set<string>;
   onDelete: (id: string) => void;
   onUpdate: (id: string, name: string, phones: PhoneRow[]) => void;
 };
@@ -24,6 +25,7 @@ function phonesPrimaryFirst(contact: Contact): PhoneNumber[] {
 
 export function ContactCard({
   contact,
+  duplicateNumbers,
   onDelete,
   onUpdate,
 }: ContactCardProps) {
@@ -55,6 +57,14 @@ export function ContactCard({
             <span className="contact-card__phone-number">{phone.number}</span>
             {phone.isPrimary && (
               <span className="contact-card__primary-badge">Primary</span>
+            )}
+            {duplicateNumbers.has(phone.number) && (
+              <span
+                className="contact-card__duplicate-badge"
+                title="This number appears on more than one contact"
+              >
+                Duplicate
+              </span>
             )}
           </li>
         ))}

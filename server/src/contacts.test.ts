@@ -201,6 +201,49 @@ test("defaults primary to the first phone when none is marked", async () => {
   assert.equal(res.body.phones[1].isPrimary, false);
 });
 
+async function seed(app: ReturnType<typeof createApp>) {
+  await request(app)
+    .post("/api/contacts")
+    .send({ name: { first: "Ada", last: "Lovelace" }, phones: [{ number: "555-0100" }] });
+  await request(app)
+    .post("/api/contacts")
+    .send({ name: { first: "Grace" }, phones: [{ number: "555-0199" }] });
+}
+
+test("GET /api/contacts?q= matches by name, case-insensitively", async () => {
+  const app = appWithMemoryDb();
+  await seed(app);
+
+  const res = await request(app).get("/api/contacts").query({ q: "ADA" });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.length, 1);
+  assert.equal(res.body[0].name.first, "Ada");
+});
+
+test("GET /api/contacts?q= matches by phone number", async () => {
+  const app = appWithMemoryDb();
+  await seed(app);
+
+  const res = await request(app).get("/api/contacts").query({ q: "0199" });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.length, 1);
+  assert.equal(res.body[0].name.first, "Grace");
+});
+
+test("GET /api/contacts returns all for empty q and none for a non-match", async () => {
+  const app = appWithMemoryDb();
+  await seed(app);
+
+  assert.equal((await request(app).get("/api/contacts").query({ q: "" })).body.length, 2);
+  assert.equal((await request(app).get("/api/contacts")).body.length, 2);
+  assert.deepEqual(
+    (await request(app).get("/api/contacts").query({ q: "zzz" })).body,
+    [],
+  );
+});
+
 test("persists contacts across reopening the database file", async () => {
   const dbPath = join(tmpdir(), `phonebook-test-${randomUUID()}.db`);
 

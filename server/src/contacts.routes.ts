@@ -33,8 +33,9 @@ function validateInput(body: unknown): string | null {
 export function contactsRouter(db: Db): Router {
   const router = Router();
 
-  router.get("/", (_req, res) => {
-    res.json(listContacts(db));
+  router.get("/", (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q : undefined;
+    res.json(listContacts(db, q));
   });
 
   router.get("/:id", (req, res) => {
