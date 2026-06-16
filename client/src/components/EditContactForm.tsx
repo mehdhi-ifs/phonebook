@@ -64,13 +64,13 @@ export function EditContactForm({
     );
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!canSave || saving) return;
     const phones = rows
       .map((row) => ({ ...row, number: row.number.trim() }))
       .filter((row) => row.number !== "");
-    onSave(contact.id, trimmedName, phones);
+    await onSave(contact.id, trimmedName, phones);
   }
 
   return (

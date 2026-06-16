@@ -21,8 +21,9 @@ const SEARCH_DEBOUNCE_MS = 300;
 function findDuplicateNumbers(contacts: Contact[]): Set<string> {
   const counts = new Map<string, number>();
   for (const contact of contacts) {
-    for (const phone of contact.phones) {
-      counts.set(phone.number, (counts.get(phone.number) ?? 0) + 1);
+    const numbersOnContact = new Set(contact.phones.map((phone) => phone.number));
+    for (const number of numbersOnContact) {
+      counts.set(number, (counts.get(number) ?? 0) + 1);
     }
   }
   return new Set(
@@ -95,12 +96,16 @@ export function App({ client = defaultClient }: AppProps) {
   }, [client, query]);
 
   async function refresh() {
-    const [displayed, all] = await Promise.all([
-      client.list(query),
-      client.list(),
-    ]);
-    setContacts(displayed);
-    setAllContacts(all);
+    try {
+      const [displayed, all] = await Promise.all([
+        client.list(query),
+        client.list(),
+      ]);
+      setContacts(displayed);
+      setAllContacts(all);
+    } catch (err) {
+      setSearchError(errorMessage(err));
+    }
   }
 
   function clearCardError(id: string) {
@@ -121,14 +126,14 @@ export function App({ client = defaultClient }: AppProps) {
           number: phone.number,
         })),
       });
-      await refresh();
-      return true;
     } catch (err) {
       setAddError(errorMessage(err));
-      return false;
-    } finally {
       setSaving(false);
+      return false;
     }
+    setSaving(false);
+    await refresh();
+    return true;
   }
 
   async function updateContact(
@@ -138,9 +143,12 @@ export function App({ client = defaultClient }: AppProps) {
   ): Promise<boolean> {
     setCardAction({ id, type: "saving" });
     clearCardError(id);
+    const existing =
+      allContacts.find((contact) => contact.id === id) ??
+      contacts.find((contact) => contact.id === id);
     try {
       await client.update(id, {
-        name: { first: name },
+        name: existing ? { ...existing.name, first: name } : { first: name },
         phones: phones.map((phone) => ({
           id: phone.id,
           label: phone.label,
@@ -148,14 +156,14 @@ export function App({ client = defaultClient }: AppProps) {
           isPrimary: phone.isPrimary,
         })),
       });
-      await refresh();
-      return true;
     } catch (err) {
       setCardError({ id, message: errorMessage(err) });
-      return false;
-    } finally {
       setCardAction(null);
+      return false;
     }
+    setCardAction(null);
+    await refresh();
+    return true;
   }
 
   async function deleteContact(id: string): Promise<boolean> {
@@ -163,14 +171,14 @@ export function App({ client = defaultClient }: AppProps) {
     clearCardError(id);
     try {
       await client.remove(id);
-      await refresh();
-      return true;
     } catch (err) {
       setCardError({ id, message: errorMessage(err) });
-      return false;
-    } finally {
       setCardAction(null);
+      return false;
     }
+    setCardAction(null);
+    await refresh();
+    return true;
   }
 
   return (

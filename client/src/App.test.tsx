@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import { App } from "./App";
 import type { Contact } from "./types";
 import { makeFakeContactsClient } from "./test/fakeContactsClient";
+import type { ContactInput } from "./api/contactsClient";
 
 function makeContact(first: string, number: string): Contact {
   return {
@@ -258,6 +259,23 @@ describe("Phase 3: duplicate detection", () => {
     expect(screen.queryByText(/^duplicate$/i)).not.toBeInTheDocument();
   });
 
+  it("does not flag a number repeated on a single contact", async () => {
+    const contact: Contact = {
+      id: crypto.randomUUID(),
+      name: { first: "Ada" },
+      phones: [
+        { id: crypto.randomUUID(), label: "mobile", number: "555-0100", isPrimary: true },
+        { id: crypto.randomUUID(), label: "work", number: "555-0100" },
+      ],
+      emails: [],
+      addresses: [],
+    };
+    renderApp([contact]);
+    await screen.findByText("Ada");
+
+    expect(screen.queryByText(/^duplicate$/i)).not.toBeInTheDocument();
+  });
+
   it("clears the flag after the duplicate partner is deleted", async () => {
     const user = userEvent.setup();
     renderApp([
@@ -392,6 +410,62 @@ describe("Phase 3: per-action loading & error", () => {
       expect(screen.queryByText("Ada")).not.toBeInTheDocument();
     });
     expect(screen.queryByText(/delete failed/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("Phase 3: mutation robustness", () => {
+  it("preserves the last name when editing only the phone number", async () => {
+    const user = userEvent.setup();
+    const contact: Contact = {
+      id: crypto.randomUUID(),
+      name: { first: "Ada", last: "Lovelace" },
+      phones: [
+        { id: crypto.randomUUID(), label: "mobile", number: "555-0100", isPrimary: true },
+      ],
+      emails: [],
+      addresses: [],
+    };
+    render(<App client={makeFakeContactsClient([contact])} />);
+    const card = (await screen.findByText("Ada Lovelace")).closest(
+      "li",
+    ) as HTMLElement;
+
+    await user.click(within(card).getByRole("button", { name: /edit/i }));
+    const editForm = screen.getByRole("form", { name: /edit contact/i });
+    const phoneInput = within(editForm).getByLabelText(/phone number/i);
+    await user.clear(phoneInput);
+    await user.type(phoneInput, "555-9999");
+    await user.click(within(editForm).getByRole("button", { name: /save/i }));
+
+    expect(await screen.findByText("555-9999")).toBeInTheDocument();
+    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
+  });
+
+  it("treats a create as successful even if the follow-up reload fails", async () => {
+    const user = userEvent.setup();
+    const base = makeFakeContactsClient([]);
+    let writeDone = false;
+    const client = {
+      ...base,
+      create: async (input: ContactInput) => {
+        const created = await base.create(input);
+        writeDone = true;
+        return created;
+      },
+      list: (query?: string) =>
+        writeDone ? Promise.reject(new Error("Reload failed")) : base.list(query),
+    };
+    render(<App client={client} />);
+    await screen.findByText(/no contacts yet/i);
+
+    await fillAddForm(user);
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/name/i)).toHaveValue("");
+    });
+    const form = screen.getByRole("form", { name: /add contact/i });
+    expect(within(form).queryByText(/failed/i)).not.toBeInTheDocument();
   });
 });
 
